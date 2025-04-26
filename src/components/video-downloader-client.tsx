@@ -2,7 +2,7 @@
 'use client';
 
 import type { FC } from 'react';
-import { useState } from 'react';
+import { useState, useTransition } from 'react'; // Added useTransition
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -24,9 +24,10 @@ type FormValues = z.infer<typeof formSchema>;
 
 const VideoDownloaderClient: FC = () => {
   const [downloadLinks, setDownloadLinks] = useState<DownloadLink[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  // const [isLoading, setIsLoading] = useState<boolean>(false); // Replaced with useTransition
   const [error, setError] = useState<string | null>(null);
   const [showMockDataWarning, setShowMockDataWarning] = useState<boolean>(false);
+  const [isPending, startTransition] = useTransition(); // Using transition for better UX
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -35,30 +36,28 @@ const VideoDownloaderClient: FC = () => {
     },
   });
 
-  const onSubmit = async (values: FormValues) => {
-    setIsLoading(true);
-    setError(null);
-    setDownloadLinks([]);
-    setShowMockDataWarning(false); // Reset warning on new submission
+  const onSubmit = (values: FormValues) => {
+    startTransition(async () => { // Wrap action call in startTransition
+      // setIsLoading(true); // No longer needed with useTransition
+      setError(null);
+      setDownloadLinks([]);
+      setShowMockDataWarning(false); // Reset warning on new submission
 
-    // Clear previous results visually immediately
-    setDownloadLinks([]);
+      const result = await fetchDownloadLinksAction(values.videoUrl);
 
-    const result = await fetchDownloadLinksAction(values.videoUrl);
-
-    if (result.success) {
-      setDownloadLinks(result.data || []);
-      // Check if the returned URLs look like mock data
-      if (result.data?.some(link => link.url.includes('example.com'))) {
-        setShowMockDataWarning(true);
+      if (result.success) {
+        setDownloadLinks(result.data || []);
+        // Check if the returned URLs look like mock data
+        if (result.data?.some(link => link.url.includes('example.com'))) {
+          setShowMockDataWarning(true);
+        }
+      } else {
+        setError(result.error || 'An unknown error occurred.');
+        setDownloadLinks([]); // Ensure links are cleared on error
       }
-    } else {
-      setError(result.error || 'An unknown error occurred.');
-      // Clear previous links if there's an error (already done above)
-      // setDownloadLinks([]);
-    }
 
-    setIsLoading(false);
+      // setIsLoading(false); // No longer needed
+    });
   };
 
   return (
@@ -83,8 +82,8 @@ const VideoDownloaderClient: FC = () => {
               </FormItem>
             )}
           />
-          <Button type="submit" disabled={isLoading} className="w-full text-lg py-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200">
-            {isLoading ? (
+          <Button type="submit" disabled={isPending} className="w-full text-lg py-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200">
+            {isPending ? (
               <>
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                 Processing...
@@ -96,7 +95,7 @@ const VideoDownloaderClient: FC = () => {
         </form>
       </Form>
 
-      {error && (
+      {error && !isPending && ( // Don't show error while pending
          <Alert variant="destructive" className="mt-6 rounded-lg">
           <AlertTriangle className="h-4 w-4" />
            <AlertTitle>Error</AlertTitle>
@@ -104,7 +103,7 @@ const VideoDownloaderClient: FC = () => {
          </Alert>
        )}
 
-      {showMockDataWarning && !isLoading && downloadLinks.length > 0 && (
+      {showMockDataWarning && !isPending && downloadLinks.length > 0 && (
          <Alert variant="warning" className="mt-6 rounded-lg">
            <AlertTriangle className="h-4 w-4" />
            <AlertTitle>Developer Notice: Using Mock Data</AlertTitle>
@@ -112,12 +111,12 @@ const VideoDownloaderClient: FC = () => {
              The download links shown below are **placeholders** (e.g., from example.com).
              The actual video/audio downloading functionality requires implementation in the backend service (`src/services/y2mate.ts`).
              Clicking 'Download' now will likely download an **HTML file (e.g., 'download.htm')** or lead to 'example.com', not the actual media file.
-             The backend must be updated to provide **direct** media links.
+             The backend service **must** be updated to provide **direct media links** (e.g., ending in `.mp4` or `.mp3`) for the downloads to work correctly. See the comments in `src/services/y2mate.ts` for details.
            </AlertDescription>
          </Alert>
        )}
 
-      {downloadLinks.length > 0 && !isLoading && (
+      {downloadLinks.length > 0 && !isPending && (
         <div className="mt-8">
            <h2 className="text-xl font-semibold mb-4 text-center text-foreground">Available Downloads</h2>
           <DownloadLinksDisplay links={downloadLinks} />
@@ -128,3 +127,5 @@ const VideoDownloaderClient: FC = () => {
 };
 
 export default VideoDownloaderClient;
+
+    
