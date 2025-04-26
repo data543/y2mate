@@ -48,6 +48,7 @@ const VideoDownloaderPage: FC = () => {
       setDownloadLinks(result.data || []);
       // Check if the returned URLs look like mock data (simple check based on example.com)
       // This is a basic check; a more robust solution would involve the backend indicating mock status.
+      // The backend service currently *always* returns mock data with "example.com".
       if (result.data?.some(link => link.url.includes('example.com'))) {
         setShowMockDataWarning(true);
       }

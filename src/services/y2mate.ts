@@ -55,7 +55,7 @@ export interface DownloadLink {
  * 3.  **Handle Fragility:** Web scraping is unreliable. If the target website's
  *     structure changes, your code will break. Consider APIs if available.
  * 4.  **Review Terms of Service:** Ensure your implementation complies with the
- *     terms of service of the website you are interacting with.
+ *     terms of service of the website you are interacting with. Scraping may be against their terms.
  * ===================================
  *
  * @param videoUrl The URL of the video to retrieve download links for.
@@ -76,7 +76,7 @@ export async function getVideoDownloadLinks(videoUrl: string): Promise<DownloadL
 
 
   // Simulate network delay for demonstration purposes
-  await new Promise(resolve => setTimeout(resolve, 800)); // Slightly reduced delay
+  await new Promise(resolve => setTimeout(resolve, 800));
 
   try {
     // ========================================================================
@@ -86,16 +86,19 @@ export async function getVideoDownloadLinks(videoUrl: string): Promise<DownloadL
     // YOU MUST REPLACE THE MOCK LOGIC BELOW WITH ACTUAL CODE
     // TO INTERACT WITH Y2MATE (OR A SIMILAR SERVICE) AND EXTRACT *DIRECT* MEDIA LINKS
     //
-    // Example steps (conceptual):
-    // 1. const targetUrl = 'https://some.y2mate.endpoint/api/or/page';
-    // 2. const response = await fetch(targetUrl, { method: 'POST', body: JSON.stringify({ url: videoUrl }), headers: { ... } });
-    // 3. if (!response.ok) throw new Error('Failed to fetch from service');
-    // 4. const data = await response.json(); // or await response.text() if HTML
-    // 5. const realLinks: DownloadLink[] = parseAndExtractDirectLinks(data); // Implement this crucial function
-    // 6. return realLinks;
+    // Example steps (conceptual - requires libraries like node-fetch and cheerio):
+    // 1. const fetchResponse = await fetch('https://some.y2mate.endpoint/analyze', { method: 'POST', body: JSON.stringify({ url: videoUrl }), headers: { ... } });
+    // 2. const analyzeData = await fetchResponse.json(); // Adjust based on actual API/response
+    // 3. // ... potentially make another request using analyzeData to get download options ...
+    // 4. const downloadOptionsResponse = await fetch('...');
+    // 5. const optionsHtml = await downloadOptionsResponse.text();
+    // 6. const $ = cheerio.load(optionsHtml);
+    // 7. const realLinks: DownloadLink[] = parseAndExtractDirectLinks($); // Implement this crucial function
+    // 8. return realLinks;
     //
     // Remember to handle errors, potential CAPTCHAs, rate limits, Terms of Service,
-    // and the complexity of finding the **final direct download URL**.
+    // and the complexity of finding the **final direct download URL**, which might involve
+    // further requests or JavaScript execution simulation.
     //
     // ========================================================================
 
@@ -117,6 +120,7 @@ export async function getVideoDownloadLinks(videoUrl: string): Promise<DownloadL
                 format: 'MP4',
                 resolution: '720p',
                  // Mock URL - Replace with REAL *DIRECT* download link
+                 // Clicking this will download 'download.htm' or go to example.com
                 url: 'https://example.com/download/mock-video-720p.mp4?source=y2mate&id=123',
                 size: '30.2 MB'
             },
@@ -133,6 +137,7 @@ export async function getVideoDownloadLinks(videoUrl: string): Promise<DownloadL
                  // Mock URL - Replace with REAL *DIRECT* download link
                  // **Crucially, this link MUST point *directly* to the MP3 file.**
                  // **If it points to an HTML page, 'download.htm' might be downloaded.**
+                 // Clicking this will download 'download.htm' or go to example.com
                 url: 'https://example.com/download/mock-audio-128kbps.mp3?source=y2mate&id=123',
                 size: '4.5 MB'
             },
@@ -152,9 +157,8 @@ export async function getVideoDownloadLinks(videoUrl: string): Promise<DownloadL
 
 
   } catch (error: any) {
-    console.error('Error in getVideoDownloadLinks (potentially during mock logic):', error.message);
+    console.error('Error in getVideoDownloadLinks (potentially during mock logic or future real implementation):', error.message);
     // In case of any error during the process, return an empty array
-    // This includes errors if/when real fetching logic is added.
     return [];
   }
 }
@@ -166,45 +170,84 @@ export async function getVideoDownloadLinks(videoUrl: string): Promise<DownloadL
  * **IMPORTANT:** This is a placeholder and needs to be fully implemented based
  * on the actual structure of the data returned by the service you interact with.
  * The key challenge is ensuring the extracted URLs are **DIRECT** media links.
+ * This often requires making additional requests or simulating JavaScript execution.
  *
- * @param responseData The data received from the download service (e.g., JSON object or CheerioAPI instance).
+ * @param $ A CheerioAPI instance loaded with the HTML containing download options.
  * @returns An array of extracted DownloadLink objects with *real, direct* URLs.
  */
-// function parseAndExtractDirectLinks(responseData: any): DownloadLink[] {
+// function parseAndExtractDirectLinks($: CheerioAPI): DownloadLink[] {
 //   const links: DownloadLink[] = [];
-//   // --- Logic to parse the responseData ---
-//   // Example (if responseData is JSON like { videoLinks: [...] }):
-//   // if (responseData && responseData.videoLinks) {
-//   //   responseData.videoLinks.forEach((item: any) => {
-//   //     // !!! CRUCIAL: Ensure item.downloadUrl is the FINAL, DIRECT link !!!
-//   //     // This might involve extra steps, checking link types, etc.
-//   //     const directUrl = findDirectLink(item); // You'd need to implement findDirectLink
-//   //     if (item.format && item.quality && directUrl) {
+//
+//   // --- Logic to parse the HTML using Cheerio ---
+//   // Find the elements containing the download links (inspect the y2mate page structure)
+//   // Example (likely needs significant adjustment):
+//   // $('table.downloads-table tbody tr').each((index, element) => {
+//   //   try {
+//   //     const formatElement = $(element).find('td.format-cell'); // Adjust selector
+//   //     const resolutionElement = $(element).find('td.resolution-cell'); // Adjust selector
+//   //     const sizeElement = $(element).find('td.size-cell'); // Adjust selector
+//   //     const buttonElement = $(element).find('td.button-cell button'); // Adjust selector
+//   //
+//   //     const format = formatElement.text().trim();
+//   //     const resolution = resolutionElement.text().trim();
+//   //     const size = sizeElement.text().trim();
+//   //
+//   //     // !!! CRUCIAL PART: Getting the DIRECT link !!!
+//   //     // The direct link is often NOT in the initial button's 'href'.
+//   //     // You might need to:
+//   //     // 1. Extract data attributes from the button (e.g., data-video-id, data-token).
+//   //     // 2. Make *another* asynchronous request to a different y2mate endpoint using these attributes.
+//   //     // 3. Parse the response of *that* request to get the final direct URL.
+//   //
+//   //     const videoId = buttonElement.data('video-id'); // Example data attribute
+//   //     const token = buttonElement.data('token');     // Example data attribute
+//   //
+//   //     // const directUrl = await fetchDirectUrl(videoId, token); // Needs implementation
+//   //     const directUrl = `https://placeholder.direct.link/${videoId}.mp4`; // Placeholder - MUST be replaced
+//   //
+//   //     if (format && resolution && directUrl) {
 //   //        links.push({
-//   //          format: item.format, // e.g., 'MP4'
-//   //          resolution: item.quality, // e.g., '720p'
-//   //          url: directUrl, // The direct link to the file (e.g., ends in .mp4)
-//   //          size: item.size, // e.g., '30.2 MB'
+//   //          format: format,
+//   //          resolution: resolution,
+//   //          url: directUrl, // Ensure this is the DIRECT link
+//   //          size: size || undefined,
 //   //       });
 //   //     }
-//   //   });
-//   // }
+//   //   } catch (parseError) {
+//   //     console.error("Error parsing a download link row:", parseError);
+//   //   }
+//   // });
 //   // --- End parsing logic ---
-//   console.log(`Parsed ${links.length} potential direct links.`);
-//   return links;
+//
+//   console.log(`Parsed ${links.length} potential direct links (PLACEHOLDER IMPLEMENTATION).`);
+//   if (links.length === 0) {
+//       console.warn("Mock parsing logic did not find any links. Check selectors if implementing real scraping.");
+//   }
+//   return links; // Return the array of *hopefully* direct links
 // }
 
-// // Conceptual helper to find the actual direct link (might be complex)
-// function findDirectLink(item: any): string | null {
-//   // This is highly dependent on the service's response.
-//   // Check if item.downloadUrl looks like a direct link (e.g., ends in .mp4, .mp3)
-//   // If not, you might need to make *another* request to an intermediate URL
-//   // provided by the service to finally get the direct media link.
-//   // Return the direct URL string or null if not found/extracted.
-//   if (item.downloadUrl && /\.(mp4|mp3|webm|mkv)(\?|$)/i.test(item.downloadUrl)) {
-//       return item.downloadUrl;
-//   }
-//   // Add logic here for handling intermediate links if necessary
-//   console.warn(`Could not confirm direct link for: ${item.downloadUrl}`);
-//   return item.downloadUrl; // Returning potentially incorrect link for now
-// }
+// // Conceptual function to fetch the final direct URL (requires async/await)
+// // async function fetchDirectUrl(videoId: string, token: string): Promise<string | null> {
+// //   try {
+// //     // Make a request to the endpoint that provides the direct link
+// //     const response = await fetch('https://some.y2mate.convert.endpoint', {
+// //       method: 'POST',
+// //       body: JSON.stringify({ videoId, token }), // Adjust payload as needed
+// //       headers: { 'Content-Type': 'application/json', ... }
+// //     });
+// //     if (!response.ok) throw new Error(`Convert request failed: ${response.statusText}`);
+// //     const data = await response.json(); // Adjust based on actual response format
+// //
+// //     // Extract the direct URL from the response data
+// //     const directLink = data.dlink; // Example property name
+// //     if (directLink && typeof directLink === 'string') {
+// //       return directLink;
+// //     } else {
+// //       console.error("Could not find direct link in conversion response:", data);
+// //       return null;
+// //     }
+// //   } catch (error) {
+// //     console.error("Error fetching direct URL:", error);
+// //     return null;
+// //   }
+// // }
