@@ -1,0 +1,1 @@
+touch test.txt && echo "this is a test" > test.txt
