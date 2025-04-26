@@ -2,64 +2,19 @@
 'use client';
 
 import type { FC } from 'react';
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Loader2, Download, AlertTriangle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Download } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import type { DownloadLink } from '@/services/y2mate';
-import { fetchDownloadLinksAction } from './actions';
-import DownloadLinksDisplay from '@/components/download-links-display';
-
-const formSchema = z.object({
-  videoUrl: z.string().url({ message: 'Please enter a valid URL.' }),
-});
-
-type FormValues = z.infer<typeof formSchema>;
+import { Card, CardDescription, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton'; // Import Skeleton
+import VideoDownloaderClient from '@/components/video-downloader-client'; // Import the new client component
 
 const VideoDownloaderPage: FC = () => {
-  const [downloadLinks, setDownloadLinks] = useState<DownloadLink[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const [showMockDataWarning, setShowMockDataWarning] = useState<boolean>(false);
+  const [isMounted, setIsMounted] = useState(false);
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      videoUrl: '',
-    },
-  });
-
-  const onSubmit = async (values: FormValues) => {
-    setIsLoading(true);
-    setError(null);
-    setDownloadLinks([]);
-    setShowMockDataWarning(false); // Reset warning on new submission
-
-    const result = await fetchDownloadLinksAction(values.videoUrl);
-
-    if (result.success) {
-      setDownloadLinks(result.data || []);
-      // Check if the returned URLs look like mock data (simple check based on example.com)
-      // This is a basic check; a more robust solution would involve the backend indicating mock status.
-      // The backend service currently *always* returns mock data with "example.com".
-      if (result.data?.some(link => link.url.includes('example.com'))) {
-        setShowMockDataWarning(true);
-      }
-    } else {
-      setError(result.error || 'An unknown error occurred.');
-      // Clear previous links if there's an error
-      setDownloadLinks([]);
-    }
-
-    setIsLoading(false);
-  };
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   return (
     <div className="container mx-auto max-w-2xl py-12 px-4">
@@ -74,64 +29,16 @@ const VideoDownloaderPage: FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="videoUrl"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="sr-only">Video URL</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Enter video URL here..."
-                        {...field}
-                        className="text-base py-3 px-4 rounded-lg focus:ring-primary focus:border-primary"
-                        aria-label="Video URL Input"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit" disabled={isLoading} className="w-full text-lg py-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200">
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                 'Get Download Links'
-                )}
-              </Button>
-            </form>
-          </Form>
-
-          {error && (
-             <Alert variant="destructive" className="mt-6 rounded-lg">
-              <AlertTriangle className="h-4 w-4" />
-               <AlertTitle>Error</AlertTitle>
-               <AlertDescription>{error}</AlertDescription>
-             </Alert>
-           )}
-
-          {showMockDataWarning && !isLoading && downloadLinks.length > 0 && (
-             <Alert variant="warning" className="mt-6 rounded-lg">
-               <AlertTriangle className="h-4 w-4" />
-               <AlertTitle>Developer Notice: Using Mock Data</AlertTitle>
-               <AlertDescription>
-                 The download links shown below are **placeholders** (e.g., from example.com).
-                 The actual video/audio downloading functionality requires implementation in the backend service (`src/services/y2mate.ts`).
-                 Clicking 'Download' now will likely download an **HTML file (e.g., 'download.htm')** or lead to 'example.com', not the actual media file.
-                 The backend must be updated to provide **direct** media links.
-               </AlertDescription>
-             </Alert>
-           )}
-
-          {downloadLinks.length > 0 && !isLoading && (
-            <div className="mt-8">
-               <h2 className="text-xl font-semibold mb-4 text-center text-foreground">Available Downloads</h2>
-              <DownloadLinksDisplay links={downloadLinks} />
+          {/* Conditionally render the client component or a loading state */}
+          {isMounted ? (
+            <VideoDownloaderClient />
+          ) : (
+            <div className="space-y-6">
+              {/* Placeholder Skeleton for the form */}
+              <Skeleton className="h-10 w-full rounded-lg" />
+              <Skeleton className="h-12 w-full rounded-lg" />
+              {/* Optional: Placeholder for results section if needed */}
+              {/* <Skeleton className="h-20 w-full rounded-lg mt-8" /> */}
             </div>
           )}
         </CardContent>
