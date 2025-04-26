@@ -19,28 +19,33 @@ router.post('/instagram', async (req, res) => {
     await page.goto(url, { waitUntil: 'networkidle2' });
 
     // Extract video URL from meta tags or video element
-    const videoUrl = await page.evaluate(() => {
+    const videoData = await page.evaluate(() => {
       const metaVideo = document.querySelector('meta[property="og:video"]');
-      if (metaVideo && metaVideo.content) {
-        return metaVideo.content;
-      }
       const video = document.querySelector('video');
-      if (video && video.src) {
-        return video.src;
-      }
-      return null;
+      const metaImage = document.querySelector('meta[property="og:image"]');
+      const metaTitle = document.querySelector('meta[property="og:title"]');
+      const metaDuration = document.querySelector('meta[property="video:duration"]');
+      const authorName = document.querySelector('a[title]')?.title || null;
+
+      return {
+        videoUrl: metaVideo?.content || video?.src || null,
+        thumbnail: metaImage?.content || null,
+        title: metaTitle?.content || null,
+        duration: metaDuration?.content || null,
+        authorName,
+      };
     });
 
-    if (!videoUrl) {
+    if (!videoData.videoUrl) {
       return res.status(404).json({ error: 'Video URL not found' });
     }
 
     await browser.close();
 
-    return res.json({ videoUrl });
+    return res.json(videoData);
   } catch (error) {
     if (browser) await browser.close();
-    return res.status(500).json({ error: 'Failed to fetch video URL', details: error.message });
+    return res.status(500).json({ error: 'Failed to fetch video data', details: error.message });
   }
 });
 
