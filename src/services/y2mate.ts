@@ -15,9 +15,12 @@ export interface DownloadLink {
   resolution: string;
   /**
    * The actual URL to initiate the download.
-   * !!! IMPORTANT !!! This URL MUST be the direct link to the video/audio file.
-   * If it points to an intermediate page or requires further processing,
-   * the download will likely fail or download an incorrect file (like an HTML page).
+   * !!! VERY IMPORTANT !!! This URL **MUST** be the **DIRECT** link to the video/audio file
+   * (e.g., 'https://server.com/video.mp4?token=xyz').
+   * If it points to an intermediate HTML page (like example.com or a page on y2mate itself
+   * that *then* starts the download), clicking the link in the UI will likely download
+   * that HTML page (often named 'download.htm' or similar) INSTEAD of the media file.
+   * Getting this direct link often requires complex interaction with the source service.
    */
   url: string;
   /**
@@ -29,46 +32,51 @@ export interface DownloadLink {
 /**
  * Asynchronously retrieves download links for a given video URL.
  *
- * !!! CRITICAL WARNING !!!
- * This function currently returns MOCK DATA. It does NOT actually fetch
- * or scrape data from y2mate or any other service. The URLs provided
- * in the mock data are placeholders (e.g., 'https://example.com/mock-video.mp4')
- * and WILL NOT download the actual video you requested.
+ * !!! CRITICAL WARNING - READ THIS !!!
+ * ===================================
+ * This function currently returns **MOCK DATA**. It does **NOT** actually fetch
+ * or scrape data from y2mate or any other service.
  *
- * To make this function work correctly, you MUST implement the logic to:
- * 1. Send the `videoUrl` to the y2mate service (or a similar service).
- * 2. Receive the response (likely HTML or JSON).
- * 3. Parse the response to extract the *direct* download links for various formats/resolutions.
- * 4. Return these *real* links in the `DownloadLink[]` array.
+ * The URLs provided in the mock data (e.g., 'https://example.com/...') are
+ * **PLACEHOLDERS** and **WILL NOT** download the actual video you requested.
+ * Clicking them will likely result in downloading an HTML file (like 'download.htm')
+ * or navigating to 'example.com'.
  *
- * Web scraping (parsing HTML) is fragile, often violates Terms of Service, and
- * can break easily if the target website changes its structure. Using an
- * official API, if available, is strongly recommended.
- *
- * The current mock implementation below simulates finding links for YouTube URLs
- * and returning none for others. THIS IS NOT REAL FUNCTIONALITY.
+ * **TO MAKE THIS WORK CORRECTLY, YOU MUST:**
+ * 1.  **Implement Real Logic:** Replace the mock data section below with code that
+ *     actually interacts with a service like y2mate (or an alternative). This
+ *     typically involves making HTTP requests and parsing the response.
+ * 2.  **Extract DIRECT Links:** The most crucial and difficult part is ensuring
+ *     that the `url` field in the returned `DownloadLink` objects contains the
+ *     **FINAL, DIRECT** link to the media file (e.g., `.mp4`, `.mp3`). Services
+ *     like y2mate often obscure these links behind intermediate pages, redirects,
+ *     or JavaScript. You may need to simulate browser interactions or inspect
+ *     network traffic to find the real links.
+ * 3.  **Handle Fragility:** Web scraping is unreliable. If the target website's
+ *     structure changes, your code will break. Consider APIs if available.
+ * 4.  **Review Terms of Service:** Ensure your implementation complies with the
+ *     terms of service of the website you are interacting with.
+ * ===================================
  *
  * @param videoUrl The URL of the video to retrieve download links for.
- * @returns A promise that resolves to an array of DownloadLink objects.
- *          Currently returns MOCK data. Returns an empty array if fetching/parsing fails
- *          or if the mock logic determines no links should be returned.
+ * @returns A promise that resolves to an array of DownloadLink objects containing **DIRECT** media URLs.
+ *          Currently returns MOCK data. Returns an empty array if the (future) real fetching/parsing fails.
  */
 export async function getVideoDownloadLinks(videoUrl: string): Promise<DownloadLink[]> {
   console.log(`Attempting to fetch download links for: ${videoUrl}`);
   console.warn(
-    `--->>> WARNING <<<---
-    The function 'getVideoDownloadLinks' is currently using MOCK DATA.
-    It is NOT fetching real download links from y2mate or any other service.
-    The download links displayed are placeholders (e.g., https://example.com/...)
-    and WILL NOT download the requested video.
-    You MUST implement the actual fetching and parsing logic inside
-    'src/services/y2mate.ts' for this feature to work correctly.
-    See the function's comments for details.`
+    `--->>> DEVELOPMENT WARNING <<<---
+    The function 'getVideoDownloadLinks' in 'src/services/y2mate.ts' is currently using MOCK DATA.
+    It is NOT fetching real download links. The links shown are placeholders (e.g., https://example.com/...).
+    Clicking these links will likely download an HTML file (e.g., 'download.htm') or go to example.com,
+    NOT the requested video/audio file.
+    You MUST implement the actual fetching and DIRECT link extraction logic for this feature to work.
+    See the function's source code comments for detailed guidance.`
    );
 
 
   // Simulate network delay for demonstration purposes
-  await new Promise(resolve => setTimeout(resolve, 1000)); // Reduced delay slightly
+  await new Promise(resolve => setTimeout(resolve, 800)); // Slightly reduced delay
 
   try {
     // ========================================================================
@@ -76,22 +84,24 @@ export async function getVideoDownloadLinks(videoUrl: string): Promise<DownloadL
     // ========================================================================
     //
     // YOU MUST REPLACE THE MOCK LOGIC BELOW WITH ACTUAL CODE
-    // TO INTERACT WITH Y2MATE (OR A SIMILAR SERVICE)
+    // TO INTERACT WITH Y2MATE (OR A SIMILAR SERVICE) AND EXTRACT *DIRECT* MEDIA LINKS
     //
     // Example steps (conceptual):
     // 1. const targetUrl = 'https://some.y2mate.endpoint/api/or/page';
     // 2. const response = await fetch(targetUrl, { method: 'POST', body: JSON.stringify({ url: videoUrl }), headers: { ... } });
     // 3. if (!response.ok) throw new Error('Failed to fetch from service');
     // 4. const data = await response.json(); // or await response.text() if HTML
-    // 5. const realLinks: DownloadLink[] = parseApiResponse(data); // Implement parseApiResponse
+    // 5. const realLinks: DownloadLink[] = parseAndExtractDirectLinks(data); // Implement this crucial function
     // 6. return realLinks;
     //
-    // Remember to handle errors, potential CAPTCHAs, rate limits, and Terms of Service.
+    // Remember to handle errors, potential CAPTCHAs, rate limits, Terms of Service,
+    // and the complexity of finding the **final direct download URL**.
     //
     // ========================================================================
 
 
     // **Returning MOCK DATA - THIS NEEDS TO BE REPLACED**
+    // This mock logic simulates finding links only for YouTube URLs.
     if (videoUrl.includes("youtube.com") || videoUrl.includes("youtu.be")) {
         // Simulate finding links for a valid YouTube URL
         console.log("Mock: Simulating links found for YouTube URL.");
@@ -99,42 +109,44 @@ export async function getVideoDownloadLinks(videoUrl: string): Promise<DownloadL
             {
                 format: 'MP4',
                 resolution: '1080p',
-                // Mock URL - Replace with REAL direct download link
+                // Mock URL - Replace with REAL *DIRECT* download link
                 url: 'https://example.com/download/mock-video-1080p.mp4?source=y2mate&id=123',
                 size: '50.5 MB'
             },
             {
                 format: 'MP4',
                 resolution: '720p',
-                 // Mock URL - Replace with REAL direct download link
+                 // Mock URL - Replace with REAL *DIRECT* download link
                 url: 'https://example.com/download/mock-video-720p.mp4?source=y2mate&id=123',
                 size: '30.2 MB'
             },
             {
                 format: 'MP4',
                 resolution: '360p',
-                 // Mock URL - Replace with REAL direct download link
+                 // Mock URL - Replace with REAL *DIRECT* download link
                 url: 'https://example.com/download/mock-video-360p.mp4?source=y2mate&id=123',
                 size: '15.8 MB'
             },
             {
                 format: 'MP3',
                 resolution: '128 kbps',
-                 // Mock URL - Replace with REAL direct download link
+                 // Mock URL - Replace with REAL *DIRECT* download link
+                 // **Crucially, this link MUST point *directly* to the MP3 file.**
+                 // **If it points to an HTML page, 'download.htm' might be downloaded.**
                 url: 'https://example.com/download/mock-audio-128kbps.mp3?source=y2mate&id=123',
                 size: '4.5 MB'
             },
              {
                 format: 'WEBM',
                 resolution: '720p',
-                 // Mock URL - Replace with REAL direct download link
+                 // Mock URL - Replace with REAL *DIRECT* download link
                 url: 'https://example.com/download/mock-video-720p.webm?source=y2mate&id=123',
                 size: '25.1 MB'
             },
         ];
     } else {
          // Simulate not finding links for other URLs
-        console.log("Mock: URL doesn't seem to be a YouTube link, returning no links.")
+        console.log("Mock: URL doesn't seem to be a YouTube link, returning no links.");
         return [];
     }
 
@@ -149,32 +161,50 @@ export async function getVideoDownloadLinks(videoUrl: string): Promise<DownloadL
 
 
 /**
- * Example Helper Function to Parse an API Response or HTML (Conceptual)
+ * Example Helper Function to Parse API Response or HTML (Conceptual)
  *
  * **IMPORTANT:** This is a placeholder and needs to be fully implemented based
  * on the actual structure of the data returned by the service you interact with.
+ * The key challenge is ensuring the extracted URLs are **DIRECT** media links.
  *
  * @param responseData The data received from the download service (e.g., JSON object or CheerioAPI instance).
  * @returns An array of extracted DownloadLink objects with *real, direct* URLs.
  */
-// function parseApiResponse(responseData: any): DownloadLink[] {
+// function parseAndExtractDirectLinks(responseData: any): DownloadLink[] {
 //   const links: DownloadLink[] = [];
 //   // --- Logic to parse the responseData ---
 //   // Example (if responseData is JSON like { videoLinks: [...] }):
 //   // if (responseData && responseData.videoLinks) {
 //   //   responseData.videoLinks.forEach((item: any) => {
 //   //     // !!! CRUCIAL: Ensure item.downloadUrl is the FINAL, DIRECT link !!!
-//   //     if (item.format && item.quality && item.downloadUrl) {
+//   //     // This might involve extra steps, checking link types, etc.
+//   //     const directUrl = findDirectLink(item); // You'd need to implement findDirectLink
+//   //     if (item.format && item.quality && directUrl) {
 //   //        links.push({
 //   //          format: item.format, // e.g., 'MP4'
 //   //          resolution: item.quality, // e.g., '720p'
-//   //          url: item.downloadUrl, // The direct link to the file
+//   //          url: directUrl, // The direct link to the file (e.g., ends in .mp4)
 //   //          size: item.size, // e.g., '30.2 MB'
 //   //       });
 //   //     }
 //   //   });
 //   // }
 //   // --- End parsing logic ---
-//   console.log(`Parsed ${links.length} real links.`);
+//   console.log(`Parsed ${links.length} potential direct links.`);
 //   return links;
+// }
+
+// // Conceptual helper to find the actual direct link (might be complex)
+// function findDirectLink(item: any): string | null {
+//   // This is highly dependent on the service's response.
+//   // Check if item.downloadUrl looks like a direct link (e.g., ends in .mp4, .mp3)
+//   // If not, you might need to make *another* request to an intermediate URL
+//   // provided by the service to finally get the direct media link.
+//   // Return the direct URL string or null if not found/extracted.
+//   if (item.downloadUrl && /\.(mp4|mp3|webm|mkv)(\?|$)/i.test(item.downloadUrl)) {
+//       return item.downloadUrl;
+//   }
+//   // Add logic here for handling intermediate links if necessary
+//   console.warn(`Could not confirm direct link for: ${item.downloadUrl}`);
+//   return item.downloadUrl; // Returning potentially incorrect link for now
 // }

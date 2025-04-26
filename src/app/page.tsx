@@ -46,13 +46,15 @@ const VideoDownloaderPage: FC = () => {
 
     if (result.success) {
       setDownloadLinks(result.data || []);
-      // Check if the returned URLs look like mock data (simple check)
-      // In a real app, the backend action should ideally indicate if it's mock data
-      if (result.data?.some(link => link.url.includes('example.com') || link.url === '#')) {
+      // Check if the returned URLs look like mock data (simple check based on example.com)
+      // This is a basic check; a more robust solution would involve the backend indicating mock status.
+      if (result.data?.some(link => link.url.includes('example.com'))) {
         setShowMockDataWarning(true);
       }
     } else {
       setError(result.error || 'An unknown error occurred.');
+      // Clear previous links if there's an error
+      setDownloadLinks([]);
     }
 
     setIsLoading(false);
@@ -60,14 +62,14 @@ const VideoDownloaderPage: FC = () => {
 
   return (
     <div className="container mx-auto max-w-2xl py-12 px-4">
-      <Card className="shadow-lg">
+      <Card className="shadow-lg rounded-xl">
         <CardHeader>
           <CardTitle className="text-3xl font-bold text-center flex items-center justify-center gap-2">
             <Download className="h-8 w-8 text-primary" />
             Video Downloader
           </CardTitle>
-          <CardDescription className="text-center pt-2">
-            Paste the URL of the video you want to download.
+          <CardDescription className="text-center pt-2 text-muted-foreground">
+            Paste the URL of the video you want to download below.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -83,7 +85,7 @@ const VideoDownloaderPage: FC = () => {
                       <Input
                         placeholder="Enter video URL here..."
                         {...field}
-                        className="text-base"
+                        className="text-base py-3 px-4 rounded-lg focus:ring-primary focus:border-primary"
                         aria-label="Video URL Input"
                       />
                     </FormControl>
@@ -91,7 +93,7 @@ const VideoDownloaderPage: FC = () => {
                   </FormItem>
                 )}
               />
-              <Button type="submit" disabled={isLoading} className="w-full text-lg py-6">
+              <Button type="submit" disabled={isLoading} className="w-full text-lg py-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200">
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -105,26 +107,29 @@ const VideoDownloaderPage: FC = () => {
           </Form>
 
           {error && (
-             <Alert variant="destructive" className="mt-6">
+             <Alert variant="destructive" className="mt-6 rounded-lg">
               <AlertTriangle className="h-4 w-4" />
                <AlertTitle>Error</AlertTitle>
                <AlertDescription>{error}</AlertDescription>
              </Alert>
            )}
 
-          {showMockDataWarning && !isLoading && (
-             <Alert variant="warning" className="mt-6">
+          {showMockDataWarning && !isLoading && downloadLinks.length > 0 && (
+             <Alert variant="warning" className="mt-6 rounded-lg">
                <AlertTriangle className="h-4 w-4" />
                <AlertTitle>Developer Notice: Using Mock Data</AlertTitle>
                <AlertDescription>
-                 The download links shown below are placeholders. The actual video/audio downloading functionality has not been implemented yet. Clicking 'Download' will not retrieve the real file.
+                 The download links shown below are **placeholders** (e.g., from example.com).
+                 The actual video/audio downloading functionality requires implementation in the backend service (`src/services/y2mate.ts`).
+                 Clicking 'Download' now will likely download an **HTML file (e.g., 'download.htm')** or lead to 'example.com', not the actual media file.
+                 The backend must be updated to provide **direct** media links.
                </AlertDescription>
              </Alert>
            )}
 
           {downloadLinks.length > 0 && !isLoading && (
             <div className="mt-8">
-               <h2 className="text-xl font-semibold mb-4 text-center">Available Downloads</h2>
+               <h2 className="text-xl font-semibold mb-4 text-center text-foreground">Available Downloads</h2>
               <DownloadLinksDisplay links={downloadLinks} />
             </div>
           )}
