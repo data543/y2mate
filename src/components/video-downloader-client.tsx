@@ -47,8 +47,9 @@ const VideoDownloaderClient: FC = () => {
 
       if (result.success) {
         setDownloadLinks(result.data || []);
-        // Check if the returned URLs look like mock data
-        if (result.data?.some(link => link.url.includes('example.com'))) {
+        // Check if the returned URLs look like mock data (e.g., contain 'example.com' or known placeholders)
+        // This check might need refinement based on the actual mock data structure in y2mate.ts
+        if (result.data?.some(link => link.url.includes('example.com') || !link.url.match(/\.(mp4|mp3|webm|m4a|avi|mov|flv|wmv)$/i))) {
           setShowMockDataWarning(true);
         }
       } else {
@@ -59,6 +60,10 @@ const VideoDownloaderClient: FC = () => {
       // setIsLoading(false); // No longer needed
     });
   };
+
+  // No changes seem needed here for hydration based on current structure.
+  // The component uses client-side state and transitions, which should render correctly after mounting.
+  // Conditional rendering of alerts happens based on state updated *after* initial render.
 
   return (
     <>
@@ -103,15 +108,19 @@ const VideoDownloaderClient: FC = () => {
          </Alert>
        )}
 
+      {/* Enhanced Warning Message */}
       {showMockDataWarning && !isPending && downloadLinks.length > 0 && (
          <Alert variant="warning" className="mt-6 rounded-lg">
            <AlertTriangle className="h-4 w-4" />
-           <AlertTitle>Developer Notice: Using Mock Data</AlertTitle>
+           <AlertTitle>Action Required: Implement Backend Logic</AlertTitle>
            <AlertDescription>
-             The download links shown below are **placeholders** (e.g., from example.com).
-             The actual video/audio downloading functionality requires implementation in the backend service (`src/services/y2mate.ts`).
-             Clicking 'Download' now will likely download an **HTML file (e.g., 'download.htm')** or lead to 'example.com', not the actual media file.
-             The backend service **must** be updated to provide **direct media links** (e.g., ending in `.mp4` or `.mp3`) for the downloads to work correctly. See the comments in `src/services/y2mate.ts` for details.
+             <p className="font-semibold">The download links below are currently placeholders (mock data).</p>
+             <ul className="list-disc pl-5 mt-2 space-y-1">
+                <li>The actual video/audio downloading functionality requires implementation in the backend service: <code>src/services/y2mate.ts</code>.</li>
+                <li>Clicking 'Download' now will likely download an <strong className="font-semibold">HTML file (e.g., 'download.htm')</strong> or lead to a placeholder domain (like 'example.com'), **NOT** the actual media file.</li>
+                <li>The backend service **must** be updated to interact with a real video downloading source (like y2mate or an alternative API/library) and provide **DIRECT** media links (e.g., ending in <code>.mp4</code> or <code>.mp3</code>).</li>
+                <li>Please refer to the comments within <code>src/services/y2mate.ts</code> for detailed instructions on how to implement this.</li>
+             </ul>
            </AlertDescription>
          </Alert>
        )}
@@ -127,5 +136,3 @@ const VideoDownloaderClient: FC = () => {
 };
 
 export default VideoDownloaderClient;
-
-    
