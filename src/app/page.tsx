@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Loader2, Download } from 'lucide-react';
+import { Loader2, Download, AlertTriangle } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +27,7 @@ const VideoDownloaderPage: FC = () => {
   const [downloadLinks, setDownloadLinks] = useState<DownloadLink[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [showMockDataWarning, setShowMockDataWarning] = useState<boolean>(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -39,11 +40,17 @@ const VideoDownloaderPage: FC = () => {
     setIsLoading(true);
     setError(null);
     setDownloadLinks([]);
+    setShowMockDataWarning(false); // Reset warning on new submission
 
     const result = await fetchDownloadLinksAction(values.videoUrl);
 
     if (result.success) {
       setDownloadLinks(result.data || []);
+      // Check if the returned URLs look like mock data (simple check)
+      // In a real app, the backend action should ideally indicate if it's mock data
+      if (result.data?.some(link => link.url.includes('example.com') || link.url === '#')) {
+        setShowMockDataWarning(true);
+      }
     } else {
       setError(result.error || 'An unknown error occurred.');
     }
@@ -99,8 +106,19 @@ const VideoDownloaderPage: FC = () => {
 
           {error && (
              <Alert variant="destructive" className="mt-6">
+              <AlertTriangle className="h-4 w-4" />
                <AlertTitle>Error</AlertTitle>
                <AlertDescription>{error}</AlertDescription>
+             </Alert>
+           )}
+
+          {showMockDataWarning && !isLoading && (
+             <Alert variant="warning" className="mt-6">
+               <AlertTriangle className="h-4 w-4" />
+               <AlertTitle>Developer Notice: Using Mock Data</AlertTitle>
+               <AlertDescription>
+                 The download links shown below are placeholders. The actual video/audio downloading functionality has not been implemented yet. Clicking 'Download' will not retrieve the real file.
+               </AlertDescription>
              </Alert>
            )}
 
