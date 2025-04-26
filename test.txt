@@ -1,1 +1,2 @@
-touch test.txt && echo "this is a test" > test.txt
+with open("test.txt", "w") as f:
+    f.write("this is a new file content")
