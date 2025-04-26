@@ -1,2 +1,0 @@
-with open("test.txt", "w") as f:
-    f.write("this is a new file content")
