@@ -1,6 +1,6 @@
 # Instagram Video Downloader - Full Stack Project
 
-This is a full-stack Instagram video downloader application with a React frontend and an Express backend using Puppeteer for scraping Instagram reel metadata and video URLs.
+This project is a full-stack Instagram video downloader application with a React frontend and an Express backend using Puppeteer for scraping Instagram reel metadata and video URLs.
 
 ---
 

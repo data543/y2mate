@@ -50,7 +50,9 @@ const LandingPage = () => {
             <div className="mt-6">
               <h2 className="text-2xl font-semibold mb-2">{videoData.title || 'Video Details'}</h2>
               <img src={videoData.thumbnail} alt="Video thumbnail" className="mb-4 rounded" />
-              <video controls src={videoData.videoUrl} className="w-full rounded" />
+              {videoData.videoUrl && (
+                <video controls src={videoData.videoUrl} className="w-full rounded" />
+              )}
               <p className="mt-2">Duration: {videoData.duration || 'N/A'}</p>
               <p>Author: {videoData.authorName || 'N/A'}</p>
             </div>
